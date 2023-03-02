@@ -93,6 +93,7 @@ class OpenLineageAdapter:
         except requests.exceptions.RequestException:
             Stats.incr("ol.emit.fail.count")
             log.exception(f"Failed to emit OpenLineage event of id {event.run.runId}")
+            Stats.incr("ol.send.fail")
 
     def start_task(
         self,
