@@ -24,6 +24,8 @@ from openlineage.client.facet import (
 )
 from openlineage.client.run import Job, Run, RunEvent, RunState
 
+from airflow.stats import Stats
+
 if TYPE_CHECKING:
     from airflow.models.dagrun import DagRun
 
@@ -85,9 +87,11 @@ class OpenLineageAdapter:
     def emit(self, event: RunEvent):
         event = redact_with_exclusions(event)
         try:
-            return self.get_or_create_openlineage_client().emit(event)
+            with Stats.timer("ol.emit.timer"):
+                return self.get_or_create_openlineage_client().emit(event)
         except requests.exceptions.RequestException:
             log.exception(f"Failed to emit OpenLineage event of id {event.run.runId}")
+            Stats.incr("ol.send.fail")
 
     def start_task(
         self,
